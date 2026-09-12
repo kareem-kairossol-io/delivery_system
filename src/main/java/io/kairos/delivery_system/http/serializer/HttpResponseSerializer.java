@@ -9,7 +9,7 @@ public class HttpResponseSerializer {
 
     public static byte[] serialize(HttpResponse response) {
 
-        byte[] body = serializeBody(response);
+        byte[] body = serializeBody(response.getBody()).getBytes(StandardCharsets.UTF_8);
 
         String headers = serializeHeaders(response, body.length);
 
@@ -74,22 +74,27 @@ public class HttpResponseSerializer {
         return headers.toString();
     }
 
-    private static byte[] serializeBody(HttpResponse response) {
+    private static String serializeBody(Map<?, ?> body) {
 
         StringBuilder json = new StringBuilder();
-
         json.append("{");
 
         boolean first = true;
 
-        for (var entry : response.getBody().entrySet()) {
+        for (var entry : body.entrySet()) {
 
             if (!first) {
                 json.append(",");
             }
 
+            if (!(entry.getKey() instanceof String key)) {
+                throw new IllegalArgumentException(
+                        "JSON object keys must be strings"
+                );
+            }
+
             json.append("\"")
-                    .append(escape(entry.getKey()))
+                    .append(escape(key))
                     .append("\":");
 
             json.append(serializeValue(entry.getValue()));
@@ -98,9 +103,7 @@ public class HttpResponseSerializer {
         }
 
         json.append("}");
-
-        return json.toString()
-                .getBytes(StandardCharsets.UTF_8);
+        return json.toString();
     }
 
     private static String serializeValue(Object value) {
@@ -115,6 +118,10 @@ public class HttpResponseSerializer {
 
         if (value instanceof Number || value instanceof Boolean) {
             return value.toString();
+        }
+
+        if (value instanceof Map<?, ?> map) {
+            return serializeBody(map);
         }
 
         throw new IllegalArgumentException(

@@ -1,9 +1,9 @@
 package io.kairos.delivery_system.http;
 
+import io.kairos.delivery_system.core.exceptions.GlobalExceptionHandler;
 import io.kairos.delivery_system.http.parser.RequestParser;
 import io.kairos.delivery_system.http.request.HttpRequest;
 import io.kairos.delivery_system.http.router.Router;
-import io.kairos.delivery_system.http.router.RouterRegistry;
 import io.kairos.delivery_system.http.serializer.HttpResponseSerializer;
 
 import java.io.*;
@@ -41,26 +41,13 @@ public class HttpServer {
                     })
             );
 
-            RouterRegistry.register();
-
             while (running) {
                 try {
                     Socket socket = server.accept();
 
                     executor.execute(() -> {
                         try (socket) {
-
-                            InputStream inputStream = socket.getInputStream();
-                            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-
-                            HttpRequest request = RequestParser.parse(bufferedReader);
-
-                            OutputStream outputStream = socket.getOutputStream();
-
-                            byte[] response = HttpResponseSerializer.serialize(Router.route(request.method(), request.path(), request));
-                            outputStream.write(response);
-                            outputStream.flush();
-
+                            this.handleClient(socket);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -75,6 +62,39 @@ public class HttpServer {
 
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void handleClient(Socket socket) throws IOException {
+        try {
+            InputStream inputStream = socket.getInputStream();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+            HttpRequest request = RequestParser.parse(bufferedReader);
+
+            OutputStream outputStream = socket.getOutputStream();
+
+            byte[] response = HttpResponseSerializer.serialize(Router.route(request.method(), request.path(), request));
+            outputStream.write(response);
+            outputStream.flush();
+
+        } catch (Exception e) {
+            this.handleExecutor(socket, e);
+        }
+    }
+
+    private void handleExecutor(Socket socket, Exception e) throws IOException {
+        byte[] response = HttpResponseSerializer.serialize(GlobalExceptionHandler.handle(e));
+        try {
+            OutputStream outputStream =
+                    socket.getOutputStream();
+
+            outputStream.write(response);
+
+            outputStream.flush();
+
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
         }
     }
 }
