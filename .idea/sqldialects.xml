@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/src/main/java/io/kairos/delivery_system/core/database/migrations/V1__CreateUsersTable.java" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/src/main/java/io/kairos/delivery_system/modules/users/repositories/JdbcUserRepository.java" dialect="GenericSQL" />
+  </component>
+</project>
