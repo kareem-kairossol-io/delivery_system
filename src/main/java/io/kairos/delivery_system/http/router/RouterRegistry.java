@@ -1,19 +1,15 @@
 package io.kairos.delivery_system.http.router;
 
-import io.kairos.delivery_system.http.enums.ResponseCodesEnum;
-import io.kairos.delivery_system.http.response.HttpResponse;
-
-import java.util.HashMap;
-import java.util.Map;
+import io.kairos.delivery_system.modules.users.controller.UsersController;
 
 public class RouterRegistry {
-    public static void register() {
-        Router.addRoute("POST", "/users", (request) -> {
-            System.out.println(request);
-            Map<String, Object> body = new HashMap<>();
-            body.put("name", request.body().get("name"));
+    private final UsersController usersController;
 
-            return new HttpResponse(ResponseCodesEnum.SUCCESS, body);
-        });
+    public RouterRegistry(UsersController usersController) {
+        this.usersController = usersController;
+    }
+    public void register() {
+        Router.addRoute("POST", "/users", usersController::createUser);
+        Router.addRoute("PUT", "/users", usersController::updateUser);
     }
 }
